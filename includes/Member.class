@@ -1,0 +1,125 @@
+<?php
+/* Class name:  Member
+ * Description: A class that creates a User for members-only web app.
+ * Cite:        PHP, MySQL, Javascript & HTML5 for Dummies, S.Suehring, J.Valade
+ */
+ class Member {
+    private $id;            // unique identifier
+    private $firstName;     // used for login username
+    private $password;      // used for login password
+    private $startDate;     // date user became a member
+    private $isLoggedIn = false;
+    // TODO: add all other properties to keep track for a member
+     
+    /* 
+     * Constructor: initialize current instance from session
+     */
+    function __construct() {
+        if (session_id() == "") {
+            session_start();
+        }
+        $this->_initUser();
+    }
+     
+    /* 
+     *  public function registerMember($safeUser)
+     */
+    public function registerMember($safeUser) {
+    // connect to database
+    // TODO: replace DATABASENAME, USERNAME, and PASSWORD appropriately
+    try {
+        $dbh = new PDO("mysql:host=localhost;dbname=DATABASENAME", "USERNAME", "PASSWORD");
+    } catch (Exception $e) {
+        error_log("Cannot connect to MySQL: $e\n", 3, "myErrors.log");
+        return false;
+    }
+    $secret = "foobar"; // TODO: replace with user chosen password
+    $date = date("Y-m-d");  // current date
+    // TODO: add all other properties from registration form
+ 
+    // TODO: if not using UNIQUE in database, ensure that  
+    // the user does not exit already in the table
+    // otherwise, insert new record     
+    $command = "INSERT INTO members ( player, secret, date ) 
+            VALUES ( '$safeUser','$secret','$date')";               
+    if (!$result = $dbh->prepare($command)) {
+        error_log("Query does not appear to be correct: $safeUser\n", 3, "myErrors.log");
+        return false;
+    }       
+    if (!$result->execute() ) {
+        error_log("User already exists. $safeUser\n", 3, "myErrors.log");
+        return false;   
+    }   
+    //update (set) current session info
+    $this->_setSession();
+    // close database connection
+    $dbh = "";  
+    return true;        
+} 
+     
+    /* 
+     *  public function authenticate($user, $pass)
+     */
+    public function authenticate($user, $pass) {
+    //connect to database
+    try {
+        $dbh = new PDO("mysql:host=localhost;dbname=DATABASENAME", "USERNAME", "PASSWORD");
+    } catch (Exception $e) {
+        error_log("Cannot connect to MySQL: $e\n", 3, "myErrors.log");
+        return false;
+    }       
+    //retrieve user's record
+    $safeUser = $user;
+    $inPassword = $pass;
+    $query = "SELECT * FROM members WHERE player='$safeUser'";
+    if (!$result = $dbh->prepare($query)) {
+        error_log("Cannot retrieve account for: $safeUser\n", 3, "myErrors.log");
+        return false;
+    }
+    //compare userid and password
+    if ( $result->execute() ) {
+        $row = $result->fetch();     
+        $dbPassword = $row['secret'];           
+        if ($inPassword != $dbPassword) {
+            error_log("Passwords do not match. $safeUser\n", 3, "myErrors.log");
+            return false;               
+        }
+    }
+    //update this User properties from database     
+    $this->firstName = $row['player'];
+    $this->password = $row['secret'];
+    $this->startDate = $row['date'];
+    $this->isLoggedIn = true;        
+    //update (set) current session info
+    $this->_setSession();
+    //close database connection
+    $dbh = "";
+    return true;
+} 
+     
+    /* 
+     *  private function _initUser() called by the constructor
+     */
+    private function _initUser() {
+        if (session_id() == '') {
+            session_start();
+        }       
+        $this -> id = $_SESSION['id'];
+        $this -> firstName = $_SESSION['firstName'];
+        $this -> password = $_SESSION['password'];
+        $this -> startDate = $_SESSION['startDate'];
+        $this -> isLoggedIn = $_SESSION['isLoggedIn'];   
+    }   
+     
+    /* 
+     *  public function _setSession() called from authenticate() function
+     */
+    private function _setSession() {
+        $_SESSION['id'] = $this->id;
+        $_SESSION['firstName'] = $this->firstName;
+        $_SESSION['password'] = $this->password;
+        $_SESSION['startDate'] = $this->startDate;
+        $_SESSION['isLoggedIn'] = $this->isLoggedIn; 
+    }
+ } // end class User
+ ?>
