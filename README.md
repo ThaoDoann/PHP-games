@@ -1,6 +1,6 @@
 # PHP-games
-![Screenshot](Log in.PNG)
+![Screenshot](Login.PNG)
 
 ![Screenshot](RPSLS.PNG)
 
-![Screenshot](Tic Tac Toe.PNG)
+![Screenshot](TicTacToe.PNG)
